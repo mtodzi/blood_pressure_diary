@@ -90,7 +90,7 @@ services:
       - ENABLE_POSTGREY=1
       - SSL_TYPE=manual # Используем сертификаты из volume
       - SSL_CERT_PATH=/tmp/ssl/fullchain.pem # Путь внутри контейнера (измените на имя вашего файла)
-      - SSL_KEY_PATH=/tmp/ssl/privkey.pem    # Путь внутри контейнера (измените на имя вашего файла)
+      - SSL_KEY_PATH=/tmp/ssl/privkey.pem # Путь внутри контейнера (измените на имя вашего файла)
     volumes:
       - mail_data:/var/mail
       - mail_state:/var/mail-state
