@@ -20,14 +20,15 @@ class PressureMeasurement extends Model
         'diastolic',
         'pulse',
         'hand',
-        'user_id',
+        'measurement_id',
     ];
 
+
     /**
-     * Получить пользователя, которому принадлежит измерение.
+     * Получить измерение, которому принадлежит это измерение давления.
      */
-    public function user(): BelongsTo
+    public function measurement(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Measurement::class);
     }
 }

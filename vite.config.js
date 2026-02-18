@@ -3,6 +3,13 @@ import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
+    cacheDir: '/tmp/.vite_cache',
+    server: {
+        host: '0.0.0.0', // Позволяет подключаться извне контейнера
+        hmr: {
+            host: 'localhost', // Хост для Hot Module Replacement в браузере
+        },
+    },
     plugins: [
         laravel({
             input: [
@@ -12,7 +19,13 @@ export default defineConfig({
             refresh: true,
         }),
         vue(),
+
     ],
+    resolve: {
+        alias: {
+            'vue': 'vue/dist/vue.esm-bundler.js'
+        }
+    },
     css: {
     preprocessorOptions: {
       scss: {

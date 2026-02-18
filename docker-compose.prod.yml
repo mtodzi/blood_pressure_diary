@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        user: mtodzi
+        uid: 1000
+    container_name: diary-app
+    restart: always
+    volumes:
+      - .:/var/www/html
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: diary-nginx
+    restart: always
+    ports:
+      - "80:80"
+      # Раскомментируйте строки ниже для SSL (HTTPS)
+      # - "443:443"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      # - ./docker/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.0
+    container_name: diary-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    container_name: diary-redis
+    restart: always
+    networks:
+      - app-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        user: mtodzi
+        uid: 1000
+    container_name: diary-worker
+    restart: always
+    command: php artisan queue:work --tries=3 --timeout=90
+    depends_on:
+      - app
+      - db
+      - redis
+    volumes:
+      - .:/var/www/html
+    networks:
+      - app-network
+
+  mail:
+    image: mailserver/docker-mailserver:latest
+    container_name: diary-mail
+    hostname: mail.mtodzi.ru
+    restart: always
+    ports:
+      - "25:25"    # SMTP (Входящая почта)
+      - "587:587"  # Submission (Отправка клиентами/Laravel)
+      - "993:993"  # IMAPS (Чтение почты через почтовые клиенты)
+    environment:
+      - OVERRIDE_HOSTNAME=mail.mtodzi.ru
+      - DMS_DEBUG=0
+      - ENABLE_SPAMASSASSIN=1
+      - ENABLE_CLAMAV=1
+      - ENABLE_FAIL2BAN=1
+      - ENABLE_POSTGREY=1
+      - SSL_TYPE=manual # Используем сертификаты из volume
+      - SSL_CERT_PATH=/tmp/ssl/fullchain.pem # Путь внутри контейнера (измените на имя вашего файла)
+      - SSL_KEY_PATH=/tmp/ssl/privkey.pem    # Путь внутри контейнера (измените на имя вашего файла)
+    volumes:
+      - mail_data:/var/mail
+      - mail_state:/var/mail-state
+      - mail_config:/tmp/docker-mailserver
+      - ./docker/ssl:/tmp/ssl:ro # Монтируем папку с сертификатами хоста
+    cap_add:
+      - NET_ADMIN # Нужно для Fail2Ban
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+  mail_data:
+  mail_state:
+  mail_config:

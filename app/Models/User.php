@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Measurement;
 use App\Models\PressureMeasurement;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -49,10 +50,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Получить все измерения давления для пользователя.
+     * Получить все измерения для пользователя.
      */
-    public function pressureMeasurements(): HasMany
+    public function measurements(): HasMany
     {
-        return $this->hasMany(PressureMeasurement::class);
+        return $this->hasMany(Measurement::class);
     }
+
 }
