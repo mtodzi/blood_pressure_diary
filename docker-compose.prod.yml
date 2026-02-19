@@ -59,6 +59,7 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+    command: sh -c "certbot certonly --webroot -w /var/www/certbot -d blood-pressure-diary.mtodzi.ru --email admin@mtodzi.ru --agree-tos --no-eff-email --keep-until-expiring && trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"
     networks:
       - app-network
 
@@ -81,37 +82,6 @@ services:
     networks:
       - app-network
 
-  mail:
-    image: mailserver/docker-mailserver:latest
-    container_name: diary-mail
-    hostname: mail.mtodzi.ru
-    restart: always
-    ports:
-      - "25:25"    # SMTP (Входящая почта)
-      - "587:587"  # Submission (Отправка клиентами/Laravel)
-      - "993:993"  # IMAPS (Чтение почты через почтовые клиенты)
-    environment:
-      - OVERRIDE_HOSTNAME=mail.mtodzi.ru
-      - DMS_DEBUG=0
-      - ENABLE_SPAMASSASSIN=1
-      - ENABLE_CLAMAV=1
-      - ENABLE_FAIL2BAN=1
-      - ENABLE_POSTGREY=1
-      - SSL_TYPE=manual # Используем сертификаты из volume
-      - SSL_CERT_PATH=/tmp/ssl/fullchain.pem
-      - SSL_KEY_PATH=/tmp/ssl/privkey.pem
-    volumes:
-      - mail_data:/var/mail
-      - mail_state:/var/mail-state
-      - mail_config:/tmp/docker-mailserver
-      # Пробрасываем сертификаты (пути для Let's Encrypt)
-      - ./certbot/conf/live/mail.mtodzi.ru/privkey.pem:/tmp/ssl/privkey.pem:ro
-      - ./certbot/conf/live/mail.mtodzi.ru/fullchain.pem:/tmp/ssl/fullchain.pem:ro
-    cap_add:
-      - NET_ADMIN # Нужно для Fail2Ban
-    networks:
-      - app-network
-
 networks:
   app-network:
     driver: bridge
@@ -119,6 +89,3 @@ networks:
 volumes:
   db-data:
     driver: local
-  mail_data:
-  mail_state:
-  mail_config:
